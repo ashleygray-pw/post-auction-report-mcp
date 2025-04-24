@@ -1,0 +1,13 @@
+[project]
+name = "databricks-mcp"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "databricks-sql-connector>=4.0.2",
+    "httpx>=0.28.1",
+    "mcp[cli]>=1.6.0",
+    "pyspark>=3.5.5",
+    "python-dotenv>=1.1.0",
+]
