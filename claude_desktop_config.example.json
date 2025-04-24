@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "databricks": {
+      "command": "/Users/<your_username>/.local/bin/uv",
+      "args": [
+        "--directory",
+        "/Users/<your_username>/databricks_mcp_template",
+        "run",
+        "--with",
+        "mcp",
+        "mcp",
+        "run",
+        "databricks_mcp.py"
+      ]
+    }
+  }
+}
