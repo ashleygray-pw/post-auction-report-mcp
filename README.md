@@ -5,20 +5,38 @@ A local [Model Context Protocol (MCP)](https://modelcontext.org/) server designe
 ---
 
 # Server Setup Instructions
+## 1. Verify Node.js is Installed (Required by MCP)
 
-## 1. Clone this repository
+This project uses the Model Context Protocol (MCP) which requires Node.js under the hood — even for Python-based servers.
+
+To check if Node is installed:
+```bash
+node --version
+```
+if not installed, download Node.js from https://nodejs.org and install it before continuing.
+
+## 2. Clone this repository
 
 ```bash
 git clone https://github.com/emma-mckee-pw/databricks-mcp-template
 cd databricks-mcp-template
 ```
-## 2. Install dependencies
+
+## 3. Create Python Virtual Environment (via uv)
+Add this right after cloning:
 ```bash
-npm install
-# You need Node.js (v18+) and npm. If not installed, run:
-brew install node
+# Create a virtual environment and install dependencies
+uv venv
+uv pip install -e .
 ```
-## 3. Set up your environment
+If ```uv``` is not installed:
+```bash
+# Install uv if you don't already have it:
+curl -Ls https://astral.sh/uv/install.sh | sh
+```
+Then retry the first commands in step 3
+
+## 4. Set up your environment
 Copy the .env.example file:
 ```bash
 cp .env.example .env
@@ -27,7 +45,7 @@ Open the .env file (nano, texteditor, etc) and add your databricks token:
 ```bash
 open -a TextEdit .env
 ```
-## 4. Start the MCP server
+## 5. Start the MCP server
 ```bash
 ./start_server.sh
 ```
