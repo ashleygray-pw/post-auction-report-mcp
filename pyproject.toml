@@ -1,13 +1,31 @@
 [project]
 name = "databricks-mcp"
 version = "0.1.0"
-description = "Add your description here"
+description = "FastAPI + Databricks SQL assistant with streaming and LLM tools"
 readme = "README.md"
 requires-python = ">=3.12"
+
 dependencies = [
-    "databricks-sql-connector>=4.0.2",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.34.0",
     "httpx>=0.28.1",
-    "mcp[cli]>=1.6.0",
+    "sse-starlette>=2.2.1",
+    "databricks-sql-connector>=4.0.2",
+    "pandas>=2.2.0",
+    "numpy>=2.2.0",
     "pyspark>=3.5.5",
+    "sqlglot>=26.0.0",
+    "mcp[cli]>=1.6.0",
     "python-dotenv>=1.1.0",
+    "pydantic>=2.11.0",
+    "pydantic-settings>=2.8.0",
+    "rich>=14.0.0",
+    "markdown-it-py>=3.0.0",
+    "openpyxl>=3.1.0",
+    "typing-inspection>=0.4.0",
+    "lz4>=4.4.0"
 ]
+
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"

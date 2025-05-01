@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "chart.js": "^4.4.9",
+    "ng2-charts": "^8.0.0",
+    "ngx-markdown": "^19.1.1"
+  }
+}

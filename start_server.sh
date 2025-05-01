@@ -11,5 +11,5 @@ lsof -ti :6277 | xargs kill -9 2>/dev/null
 lsof -ti :6274 | xargs kill -9 2>/dev/null
 
 echo "🚀 Launching MCP server..."
-mcp dev databricks_mcp.py
+.venv/bin/mcp dev databricks_mcp.py
 
