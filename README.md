@@ -23,11 +23,17 @@ git clone https://github.com/emma-mckee-pw/databricks-mcp-template
 cd databricks-mcp-template
 ```
 
-## 3. Create Python Virtual Environment (via uv)
+## 3. Python Environment Setup
+### Option A: Use ```uv``` (recommended)
 Add this right after cloning:
 ```bash
-# Create a virtual environment and install dependencies
+# Create a virtual environment
 uv venv
+
+# Sync environment (uses uv.lock if present, or falls back to pyproject.toml)
+uv pip sync
+
+# Development Mode (editable install)
 uv pip install -e .
 ```
 If ```uv``` is not installed:
@@ -37,6 +43,12 @@ curl -Ls https://astral.sh/uv/install.sh | sh
 ```
 Then retry the first commands in step 3
 
+### Option B: Use traditional pip
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+```
 ## 4. Set up your environment
 Copy the .env.example file:
 ```bash
