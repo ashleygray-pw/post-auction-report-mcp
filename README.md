@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # databricks-mcp-template
 
 A local [Model Context Protocol (MCP)](https://modelcontext.org/) server designed to work with [Claude Desktop](https://www.anthropic.com/index/claude-desktop) or any other MCP-compatible LLM client. This server allows tools to be called dynamically based on user input — ideal for enriching metadata, running Databricks queries, or augmenting Claude's capabilities.
