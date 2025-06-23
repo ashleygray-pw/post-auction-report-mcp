@@ -31,7 +31,7 @@ http_path = os.getenv("DATABRICKS_HTTP_PATH")
 access_token = os.getenv("DATABRICKS_TOKEN")
 
 if not all([server_hostname, http_path, access_token]):
-    raise EnvironmentError("❌ Missing Databricks credentials in environment variables.")
+    raise EnvironmentError("Missing Databricks credentials in environment variables.")
 
 def get_connection():
     return databricks.sql.connect(
@@ -39,18 +39,17 @@ def get_connection():
         http_path=http_path,
         access_token=access_token,
     )
+    
 # ✅ Guardrail
 ALLOWED_VIEWS = {
-    "item_details", "item_buyer_info", "item_sale_status",
-    "item_tracking_dates_durations", "item_location", "item_financials",
-    "item_auction_details", "item_opportunity_info", "item_capture_and_content",
-    "item_seller_info", "item_bidding_and_engagement"
+    "item_basics", "item_account_bidding", "people_master",
 }
+
 @lru_cache
 def get_allowed_views() -> set[str]:
     query = """
         SELECT DISTINCT EXPLODE(table_view) AS full_view_name
-        FROM main.ai_data_assets.item_views_column_metadata
+        FROM main.ai_data_assets.all_column_metadata
         WHERE table_view IS NOT NULL
     """
     with get_connection() as conn:
@@ -58,8 +57,6 @@ def get_allowed_views() -> set[str]:
         cursor.execute(query)
         # Normalize by stripping schema prefix
         return {row[0].split('.')[-1].lower() for row in cursor.fetchall()}
-
-
 
 registered_tools = {}
 
@@ -90,8 +87,8 @@ mcp.tool = tracked_tool
 def get_valid_columns_for(table_name: str) -> set[str]:
     query = """
         SELECT DISTINCT column_name
-        FROM main.ai_data_assets.item_views_column_metadata
-        WHERE array_contains(table_view, ?)
+        FROM main.ai_data_assets.all_column_metadata
+        WHERE source_table = ?
     """
     with get_connection() as conn:
         cursor = conn.cursor()
@@ -101,7 +98,8 @@ def get_valid_columns_for(table_name: str) -> set[str]:
 def extract_filters(where_clause: str | None) -> dict[str, str]:
     """
     Extract filters from a WHERE clause string.
-    Returns a dictionary of column names and their corresponding values."""
+    Returns a dictionary of column names and their corresponding values.
+    """
     if not where_clause:
         return {}
     filters = {}
@@ -123,59 +121,19 @@ def list_available_views() -> list[dict[str, str]]:
     """
     return [
   {
-    "view": "item_details",
-    "description": "Identifying and descriptive information for each item, including identifiers (item_id, ims_item_id, item_icn), make/model details, VIN, and classification taxonomy (industry, family, category).",
-    "usage": "Use to classify or filter items by physical or categorical attributes. Ideal for public listings or analytic segmentations."
+    "view": "item_basics",
+    "description": "Our complete inventory -- past, present and future -- of item sold or selling on PurpleWave.com.  Rows are built out to include lots of info you would want on an item, including identifiers (item_id, ims_item_id, item_icn), make/model details, VIN/serial number, and classification taxonomy (industry, family, category).",
+    "usage": "Use to retrieve basic item details such as auction grouping, auction start and end time, item identifiers, make/model, classification taxonomy, and winning bidder and seller information."
   },
   {
-    "view": "item_sale_status",
-    "description": "Current and historical sale status flags for each item, such as whether it's published, sold, closed, or halted. Includes time-on-market (days_online).",
-    "usage": "Use to understand item lifecycle status (sold, active, removed). Useful for forecasting and lifecycle analytics."
+    "view": "item_account_bidding",
+    "description": "The table contains data related to bidding metrics at the item and account level. It includes information such as the bidder's account, bid dates, bid amounts, and whether the bidder is considered serious. This data can be used to analyze bidding patterns, assess bidder engagement, and evaluate the competitiveness of bids over time.",
+    "usage": "Use to understand bidding dynamics and auction participant behavior."
   },
   {
-    "view": "item_tracking_dates_durations",
-    "description": "Lifecycle and operational timestamps, including pickup dates, title receipt/distribution, and timing metrics between creation and publication.",
-    "usage": "Use for timeline analysis of operational processes, bottleneck detection, and time-to-market metrics."
-  },
-  {
-    "view": "item_location",
-    "description": "Geospatial and organizational information about item location: full address, coordinates, region/district/territory, and associated TM/DD names.",
-    "usage": "Use for mapping, routing, or geographic analysis of inventory and personnel assignment."
-  },
-  {
-    "view": "item_auction_details",
-    "description": "Auction-related metadata for the item including auction ID, workspace, title, end time, fiscal year/quarter, and category.",
-    "usage": "Use when filtering by auction event or analyzing auction cadence and timing by fiscal period."
-  },
-  {
-    "view": "item_financials",
-    "description": "All financial outcomes and fee structures for the item. Includes hammer price, contract price, fees, taxes, invoice and settlement IDs and dates.",
-    "usage": "Use to evaluate profitability, fees collected, and for computing metrics like average lot value (via `safe_for_avg_lot_value_calc`)."
-  },
-  {
-    "view": "item_bidding_and_engagement",
-    "description": "Bidding metrics (e.g., count of bids, bidders) and user interaction data (views, watchlist adds, video views).",
-    "usage": "Use for interest modeling, bid competitiveness analysis, and marketing performance reviews."
-  },
-  {
-    "view": "item_buyer_info",
-    "description": "Comprehensive buyer details including location, contact info, segment codes, buyer join date, and distance from item.",
-    "usage": "Use for buyer demographic analysis, CRM segmentation, and assessing geographic reach of auctions."
-  },
-  {
-    "view": "item_seller_info",
-    "description": "Seller’s company data, geographic info, engagement metadata, and classification tags. Includes sales team assignment.",
-    "usage": "Use to evaluate seller behavior, territory performance, and account management insights."
-  },
-  {
-    "view": "item_opportunity_info",
-    "description": "CRM opportunity metadata linked to the item. Includes pipeline status, segment, region, and sales rep assignment.",
-    "usage": "Use to assess funnel quality, territory productivity, and CRM pipeline coverage."
-  },
-  {
-    "view": "item_capture_and_content",
-    "description": "Data capture and content generation details, including form creator, image/video/doc counts, and submission dates.",
-    "usage": "Use to analyze listing completeness, FOS contributions, and content lifecycle timing."
+    "view": "people_master",
+    "description": "Stores entities (accounts, contacts and companies) all unioned together into one big file.  This [mostly] works because these entities have so many fields in common. The table contains information about various accounts that interact with item, including individuals and companies. It records details such as names, addresses, and identifiers, along with timestamps for when the records were created. This data can be used for tracking entity activity over time, analyzing demographic information, and understanding entity relationships within the system. Possible use cases include customer segmentation, marketing analysis, and reporting on entity engagement",
+    "usage": "Use to retrieve information about people and companies associated with items, including their names, addresses, and identifiers. This can help in understanding the entities involved in the auction process."
   }
 ]
 def ensure_table_metadata(table_views: list[str]):
@@ -211,10 +169,10 @@ def get_table_views_metadata(
 
     for view in table_views:
         if view not in allowed_views:
-            output.append({"view": view, "error": f"❌ Invalid table name: {view}"})
+            output.append({"view": view, "error": f"Invalid table name: {view}"})
             continue
 
-        qualified_view = f"main.ai_data_assets.{view}"
+        qualified_view = f"main.prod_gold.{view}"
 
         try:
             query = """
@@ -222,17 +180,16 @@ def get_table_views_metadata(
                     column_name,
                     description,
                     data_type,
-                    llm_notes,
                     example_value
-                FROM main.ai_data_assets.item_views_column_metadata
-                WHERE ARRAY_CONTAINS(table_view, ?)
-                GROUP BY column_name, description, data_type, llm_notes, example_value
+                FROM main.ai_data_assets.all_column_metadata
+                WHERE source_table = ?
+                GROUP BY column_name, description, data_type, example_value
                 LIMIT ?
             """
 
             with get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute(query, [qualified_view, limit])
+                cursor.execute(query, [view, limit])
                 rows = cursor.fetchall()
 
             if rows:
@@ -243,8 +200,7 @@ def get_table_views_metadata(
                             "column_name": row[0],
                             "description": row[1],
                             "data_type": row[2],
-                            "llm_notes": row[3],
-                            "example_value": row[4],
+                            "example_value": row[3],
                         }
                         for row in rows
                     ]
@@ -263,7 +219,6 @@ def get_table_views_metadata(
                             "column_name": c[0],
                             "description": "N/A",
                             "data_type": c[1],
-                            "llm_notes": None,
                             "example_value": None
                         }
                         for c in fallback_rows
@@ -347,7 +302,7 @@ def disambiguate_column(expr: str, preferred_table: str) -> str:
 @mcp.tool()
 def query_single_view(
     table_name: str,
-    columns: list[str],
+    columns: list[str] = ["*"],
     where_clause: str | None = None,
     group_by: list[str] | None = None,
     order_by: str | None = None,
@@ -369,9 +324,9 @@ def query_single_view(
             pass
 
     if table_name not in ALLOWED_VIEWS:
-        return f"❌ Invalid table name: {table_name}"
+        return f"Invalid table name: {table_name}"
 
-    full_table_name = f"main.ai_data_assets.{table_name}"
+    full_table_name = f"main.prod_gold.{table_name}"
     ensure_table_metadata([table_name])
     valid_columns = set(context.get("table_metadata", {}).get(table_name, []))
 
@@ -383,10 +338,10 @@ def query_single_view(
         invalid = [col for col in columns if not is_valid_sql_column(col, valid_columns, [table_name])]
         if invalid:
             suggestions = [get_close_matches(col, valid_columns, n=3) for col in invalid]
-            return f"❌ Invalid columns: {invalid} — Suggestions: {suggestions}"
+            return f"Invalid columns: {invalid} — Suggestions: {suggestions}"
 
     if where_clause and any(kw in where_clause.lower() for kw in ["limit", "order by", "group by"]):
-        return "❌ Do not include LIMIT, ORDER BY, or GROUP BY in the where_clause. Use the respective parameters."
+        return "Do not include LIMIT, ORDER BY, or GROUP BY in the where_clause. Use the respective parameters."
 
     try:
         col_str = ", ".join(columns)
@@ -419,7 +374,7 @@ def query_single_view(
         return "\n".join(str(row) for row in results) if results else "No results found."
 
     except Exception as e:
-        return f"❌ Error querying {table_name}: {e}"
+        return f"Error querying {table_name}: {e}"
 
 
 @mcp.tool()
@@ -446,11 +401,11 @@ def query_joined_views(
             pass
 
     if from_table not in ALLOWED_VIEWS:
-        return f"❌ Invalid base table: {from_table}"
+        return f"Invalid base table: {from_table}"
     if any(tbl not in ALLOWED_VIEWS for tbl in join_tables):
-        return f"❌ One or more join tables are invalid."
+        return f"One or more join tables are invalid."
 
-    full_table_name = f"main.ai_data_assets.{from_table}"
+    full_table_name = f"main.prod_gold.{from_table}"
     #valid_columns = get_valid_columns_for(full_table_name)
     ensure_table_metadata([from_table] + join_tables)
     context_table_meta = context.get("table_metadata", {})
@@ -461,7 +416,7 @@ def query_joined_views(
     invalid = [col for col in select_columns if not is_valid_sql_column(col, valid_columns, join_tables + [from_table])]
 
     if invalid:
-        return f"❌ Invalid select columns: {invalid}"
+        return f"Invalid select columns: {invalid}"
 
     try:
         select_columns = [disambiguate_column(col, from_table) for col in select_columns]
@@ -471,7 +426,7 @@ def query_joined_views(
         for join_table in join_tables:
             if join_table == from_table:
                 continue
-            query += f" INNER JOIN main.ai_data_assets.{join_table} ON {from_table}.item_id = {join_table}.item_id"
+            query += f" INNER JOIN main.prod_gold.{join_table} ON {from_table}.item_id = {join_table}.item_id"
 
         if where_clause:
             where_clause = clean_where_clause(where_clause)
@@ -502,7 +457,29 @@ def query_joined_views(
         return "\n".join(str(row) for row in results) if results else "No results found."
 
     except Exception as e:
-        return f"❌ Error performing join: {e}"
+        return f"Error performing join: {e}"
+
+@mcp.tool()
+def list_table_relationships(source_table: str) -> list[dict[str, str]]:
+    query = """
+        SELECT source_table, foreign_key, primary_key_table, primary_key, relationship
+        FROM main.ai_data_assets.key_relationships
+        WHERE source_table = ?
+    """
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(query, [source_table])
+        rows = cursor.fetchall()
+    return [
+        {
+            "source_table": row[0],
+            "foreign_key": row[1],
+            "primary_key_table": row[2],
+            "primary_key": row[3],
+            "relationship": row[4]
+        }
+        for row in rows
+    ]
 
 
 

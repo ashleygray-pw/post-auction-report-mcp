@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "➡️  Navigating to project folder..."
-cd ~/databricks_mcp || exit 1
+pwd
 
 echo "🔒 Activating virtual environment..."
 source .venv/bin/activate
