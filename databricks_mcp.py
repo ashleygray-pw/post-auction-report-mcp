@@ -41,9 +41,9 @@ def get_connection():
     )
     
 # ✅ Guardrail
-ALLOWED_VIEWS = {
-    "item_basics", "item_account_bidding", "people_master",
-}
+#ALLOWED_VIEWS = {
+#    "item_basics", "item_account_bidding", "people_master"
+#}
 
 @lru_cache
 def get_allowed_views() -> set[str]:
@@ -119,23 +119,25 @@ def list_available_views() -> list[dict[str, str]]:
     If the data needed is not avaliable in the originally selected views, select additional views to query.
     If the data needed is not available in any of the views, inform the user that the data is not available and suggest alternative approaches based on the data that is avaliable.
     """
+    query = """
+        SELECT table_name, description, usage
+        FROM main.ai_data_assets.all_table_description_metadata
+    """
+    
+    with get_connection() as conn:
+        cursor = conn.cursor()
+        cursor.execute(query)
+        rows = cursor.fetchall()
+    
     return [
-  {
-    "view": "item_basics",
-    "description": "Our complete inventory -- past, present and future -- of item sold or selling on PurpleWave.com.  Rows are built out to include lots of info you would want on an item, including identifiers (item_id, ims_item_id, item_icn), make/model details, VIN/serial number, and classification taxonomy (industry, family, category).",
-    "usage": "Use to retrieve basic item details such as auction grouping, auction start and end time, item identifiers, make/model, classification taxonomy, and winning bidder and seller information."
-  },
-  {
-    "view": "item_account_bidding",
-    "description": "The table contains data related to bidding metrics at the item and account level. It includes information such as the bidder's account, bid dates, bid amounts, and whether the bidder is considered serious. This data can be used to analyze bidding patterns, assess bidder engagement, and evaluate the competitiveness of bids over time.",
-    "usage": "Use to understand bidding dynamics and auction participant behavior."
-  },
-  {
-    "view": "people_master",
-    "description": "Stores entities (accounts, contacts and companies) all unioned together into one big file.  This [mostly] works because these entities have so many fields in common. The table contains information about various accounts that interact with item, including individuals and companies. It records details such as names, addresses, and identifiers, along with timestamps for when the records were created. This data can be used for tracking entity activity over time, analyzing demographic information, and understanding entity relationships within the system. Possible use cases include customer segmentation, marketing analysis, and reporting on entity engagement",
-    "usage": "Use to retrieve information about people and companies associated with items, including their names, addresses, and identifiers. This can help in understanding the entities involved in the auction process."
-  }
-]
+        {
+            "view": row[0],
+            "description": row[1],
+            "usage": row[2]
+        }
+        for row in rows
+    ]
+    
 def ensure_table_metadata(table_views: list[str]):
     """Load column metadata for the given views and store it in session context if not already present."""
     context_table_meta = context.get("table_metadata", {})
@@ -164,13 +166,13 @@ def get_table_views_metadata(
     Return structured column metadata (column name, description, type, notes, examples) for one or more table views.
     Each result groups columns under its corresponding view name. Falls back to `SHOW COLUMNS` if metadata is missing.
     """
-    allowed_views = ALLOWED_VIEWS
+    # allowed_views = ALLOWED_VIEWS
     output = []
 
     for view in table_views:
-        if view not in allowed_views:
-            output.append({"view": view, "error": f"Invalid table name: {view}"})
-            continue
+        #if view not in allowed_views:
+        #    output.append({"view": view, "error": f"Invalid table name: {view}"})
+        #    continue
 
         qualified_view = f"main.prod_gold.{view}"
 
@@ -323,8 +325,8 @@ def query_single_view(
         except Exception:
             pass
 
-    if table_name not in ALLOWED_VIEWS:
-        return f"Invalid table name: {table_name}"
+    #if table_name not in ALLOWED_VIEWS:
+    #    return f"Invalid table name: {table_name}"
 
     full_table_name = f"main.prod_gold.{table_name}"
     ensure_table_metadata([table_name])
@@ -400,10 +402,10 @@ def query_joined_views(
         except Exception:
             pass
 
-    if from_table not in ALLOWED_VIEWS:
-        return f"Invalid base table: {from_table}"
-    if any(tbl not in ALLOWED_VIEWS for tbl in join_tables):
-        return f"One or more join tables are invalid."
+    #if from_table not in ALLOWED_VIEWS:
+    #    return f"Invalid base table: {from_table}"
+    #if any(tbl not in ALLOWED_VIEWS for tbl in join_tables):
+    #    return f"One or more join tables are invalid."
 
     full_table_name = f"main.prod_gold.{from_table}"
     #valid_columns = get_valid_columns_for(full_table_name)
