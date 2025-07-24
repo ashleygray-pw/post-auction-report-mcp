@@ -1,17 +1,11 @@
 {
-  "mcpServers": {
-    "databricks": {
-      "command": "/Users/<your_username>/.local/bin/uv",
-      "args": [
-        "--directory",
-        "/Users/<your_username>/databricks_mcp_template",
-        "run",
-        "--with",
-        "mcp",
-        "mcp",
-        "run",
-        "databricks_mcp.py"
-      ]
-    }
+  "mcp": {
+    "enabled": true,
+    "mode": "remote",
+    "remote_host": "datalab.purplewave.com",
+    "remote_port": 8000,
+    "protocol": "http",
+    "ssl_verify": false,
+    "timeout_seconds": 30
   }
 }

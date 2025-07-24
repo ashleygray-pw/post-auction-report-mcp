@@ -14,7 +14,6 @@ from sqlglot.expressions import Column
 
 load_dotenv()
 mcp = FastMCP("databricks")
-app = mcp.app
 
 try:
     from starlette.requests import Request as StarletteRequest
