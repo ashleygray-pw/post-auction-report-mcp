@@ -514,7 +514,19 @@ def list_available_tools() -> list[dict[str, Any]]:
 import sys
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "http":
-        mcp.run(transport="http")
-    else:
+    # Default to HTTP transport for remote access
+    if len(sys.argv) > 1 and sys.argv[1] == "stdio":
         mcp.run(transport="stdio")
+    else:
+        # Run as HTTP server for remote access
+        host = os.getenv("MCP_HOST", "0.0.0.0")  # Bind to all interfaces
+        port = int(os.getenv("MCP_PORT", "8000"))
+        
+        print(f"🚀 Starting MCP server on {host}:{port}")
+        print("📡 Using streamable-http transport for remote connections")
+        
+        # Set environment variables for the HTTP server
+        os.environ["HOST"] = host
+        os.environ["PORT"] = str(port)
+        
+        mcp.run(transport="streamable-http")

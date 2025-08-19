@@ -1,11 +1,16 @@
 {
-  "mcp": {
-    "enabled": true,
-    "mode": "remote",
-    "remote_host": "datalab.purplewave.com",
-    "remote_port": 8000,
-    "protocol": "http",
-    "ssl_verify": false,
-    "timeout_seconds": 30
+  "mcpServers": {
+    "databricks-remote": {
+      "command": "_disabled_for_remote",
+      "args": ["_disabled_for_remote"],
+      "env": {
+        "_comment": "This server is configured for remote HTTP access"
+      },
+      "transport": {
+        "type": "http",
+        "host": "your-server-hostname-or-ip",
+        "port": 8000
+      }
+    }
   }
 }
