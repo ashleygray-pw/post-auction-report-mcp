@@ -58,9 +58,24 @@ Open the .env file (nano, texteditor, etc) and add your databricks token:
 open -a TextEdit .env
 ```
 ## 5. Start the MCP server
+
+### For Local Development (stdio transport):
 ```bash
-./start_server.sh
+python databricks_mcp.py stdio
 ```
+
+### For Remote Access (HTTP transport):
+```bash
+./start_remote_server.sh
+```
+
+Or with custom host/port:
+```bash
+./start_remote_server.sh 192.168.1.100 8000
+```
+
+The server will start on HTTP and be accessible remotely. Make note of the server's IP address and port for Claude Desktop configuration.
+
 # Connect Claude Desktop to Server
 You can also follow the official guide: https://modelcontextprotocol.io/quickstart/user for detailed generic instructions.
 ### 1. Open Claude Desktop Settings
